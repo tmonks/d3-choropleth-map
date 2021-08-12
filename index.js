@@ -36,14 +36,6 @@ svg
   .attr("y", 60)
   .text("Percentage of adults age 25 and older with a bachelor's degree or higher (2010-2014)");
 
-const projection = d3
-  .geoMercator()
-  .translate([graphWidth / 2, graphHeight / 2])
-  .scale(100);
-
-const path = d3.geoPath();
-const path2 = d3.geoPath().projection(projection);
-
 color = d3.scaleQuantize([0, 100], d3.schemeBlues[9]);
 
 const promises = [
@@ -53,21 +45,22 @@ const promises = [
 
 Promise.all(promises).then((values) => {
   console.log(values);
-  const counties = topojson.feature(values[0], values[0].objects.counties).features;
+  const counties = topojson.feature(values[0], values[0].objects.counties);
   const states = topojson.feature(values[0], values[0].objects.states);
+  const data = values[1];
   console.log("counties: ", counties);
   console.log("states: ", states);
 
-  const projection = d3.geoIdentity().fitSize([graphWidth, graphHeight], states);
-  const path3 = d3.geoPath().projection(projection);
+  const projection = d3.geoIdentity().fitSize([graphWidth, graphHeight], counties);
+  const path = d3.geoPath().projection(projection);
 
   graph
     .selectAll("path")
-    .data(states.features)
+    .data(counties.features)
     .enter()
     .append("path")
-    .attr("class", "state")
-    .attr("d", path3)
-    // .attr("fill", "blue")
+    .attr("class", "county")
+    .attr("d", path)
+    .attr("fill", (d) => color(data.find((x) => d.id == x.fips).bachelorsOrHigher))
     .attr("stroke", "white");
 });
