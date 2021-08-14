@@ -70,7 +70,7 @@ Promise.all(promises).then((values) => {
   console.log(values);
   const counties = topojson.feature(values[0], values[0].objects.counties);
   const states = topojson.feature(values[0], values[0].objects.states);
-  const data = values[1];
+  const educationData = values[1];
   console.log("counties: ", counties);
   console.log("states: ", states);
 
@@ -79,13 +79,13 @@ Promise.all(promises).then((values) => {
 
   graph
     .selectAll("path")
-    .data(counties.features)
+    .data(educationData)
     .enter()
     .append("path")
     .attr("class", "county")
-    .attr("d", path)
-    .attr("fill", (d) => colorScale(data.find((x) => d.id == x.fips).bachelorsOrHigher))
+    .attr("d", (d) => path(counties.features.find((x) => x.id == d.fips)))
+    .attr("fill", (d) => colorScale(d.bachelorsOrHigher))
     .attr("stroke", "white")
-    .attr("data-fips", (d) => data.find((x) => d.id == x.fips).fips)
-    .attr("data-education", (d) => data.find((x) => d.id == x.fips).bachelorsOrHigher);
+    .attr("data-fips", (d) => d.fips)
+    .attr("data-education", (d) => d.bachelorsOrHigher);
 });
