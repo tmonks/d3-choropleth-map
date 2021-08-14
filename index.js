@@ -34,11 +34,12 @@ svg
   .attr("y", 60)
   .text("Percentage of adults age 25 and older with a bachelor's degree or higher (2010-2014)");
 
-const countyColors = d3.schemeBlues[9];
-colorScale = d3.scaleQuantize([0, 100], countyColors);
+const countyColors = d3.schemeGreens[9];
+countyColors.shift(); // drop the first color
+colorScale = d3.scaleQuantize([0, 80], countyColors);
 
 // legend
-const legendScale = d3.scaleLinear().domain([0, 100]).range([0, legendWidth]);
+const legendScale = d3.scaleLinear().domain([0, 80]).range([0, legendWidth]);
 const legendAxis = d3.axisBottom(legendScale);
 const legend = svg
   .append("g")
@@ -62,10 +63,7 @@ legend
   .attr("fill", (d) => d);
 
 // tool tip div (hidden by default)
-const tooltip = d3.select(".canvas")
-  .append("div")
-  .attr("id", "tooltip")
-  .style("opacity", 0);
+const tooltip = d3.select(".canvas").append("div").attr("id", "tooltip").style("opacity", 0);
 
 const promises = [
   d3.json("https://cdn.freecodecamp.org/testable-projects-fcc/data/choropleth_map/counties.json"),
@@ -78,13 +76,11 @@ Promise.all(promises).then((values) => {
   const states = topojson.feature(values[0], values[0].objects.states);
   const educationData = values[1];
   console.log("counties: ", counties);
-  // console.log("states: ", states);
-  const minPercent = d3.min(educationData, d => d.bachelorsOrHigher);
-  const maxPercent = d3.max(educationData, d => d.bachelorsOrHigher);
-  console.log(`range: ${minPercent} - ${maxPercent}`);
+  console.log("states: ", states);
   const projection = d3.geoIdentity().fitSize([graphWidth, graphHeight], counties);
   const path = d3.geoPath().projection(projection);
 
+  // draw counties
   graph
     .selectAll("path")
     .data(educationData)
@@ -93,19 +89,26 @@ Promise.all(promises).then((values) => {
     .attr("class", "county")
     .attr("d", (d) => path(counties.features.find((x) => x.id == d.fips)))
     .attr("fill", (d) => colorScale(d.bachelorsOrHigher))
-    // .attr("stroke", "white")
     .attr("data-fips", (d) => d.fips)
     .attr("data-education", (d) => d.bachelorsOrHigher)
-    .on("mouseover", d => {
+    .on("mouseover", (d) => {
       tooltip.transition().duration(100).style("opacity", 0.9);
       tooltip
         .html(`${d.area_name}, ${d.state}: ${d.bachelorsOrHigher}%`)
         .style("left", d3.event.pageX + 10 + "px")
-        .style("top", d3.event.pageY + 10 + "px")
-      tooltip
-        .attr("data-education", d.bachelorsOrHigher)
+        .style("top", d3.event.pageY + 10 + "px");
+      tooltip.attr("data-education", d.bachelorsOrHigher);
     })
-    .on("mouseout", d => {
+    .on("mouseout", (d) => {
       tooltip.transition().duration(100).style("opacity", 0);
     });
+
+  // state boundaries
+  graph
+    .append("path")
+    .datum(topojson.mesh(values[0], values[0].objects.states, (a, b) => a !== b)) // the a !== b filter returns interior borders only
+    .attr("fill", "none")
+    .attr("stroke", "white")
+    .attr("stroke-linejoin", "round")
+    .attr("d", path);
 });
