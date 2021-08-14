@@ -61,6 +61,12 @@ legend
   .attr("x", (d, i) => (legendWidth / countyColors.length) * i)
   .attr("fill", (d) => d);
 
+// tool tip div (hidden by default)
+const tooltip = d3.select(".canvas")
+  .append("div")
+  .attr("id", "tooltip")
+  .style("opacity", 0);
+
 const promises = [
   d3.json("https://cdn.freecodecamp.org/testable-projects-fcc/data/choropleth_map/counties.json"),
   d3.json("https://cdn.freecodecamp.org/testable-projects-fcc/data/choropleth_map/for_user_education.json"),
@@ -72,8 +78,10 @@ Promise.all(promises).then((values) => {
   const states = topojson.feature(values[0], values[0].objects.states);
   const educationData = values[1];
   console.log("counties: ", counties);
-  console.log("states: ", states);
-
+  // console.log("states: ", states);
+  const minPercent = d3.min(educationData, d => d.bachelorsOrHigher);
+  const maxPercent = d3.max(educationData, d => d.bachelorsOrHigher);
+  console.log(`range: ${minPercent} - ${maxPercent}`);
   const projection = d3.geoIdentity().fitSize([graphWidth, graphHeight], counties);
   const path = d3.geoPath().projection(projection);
 
@@ -85,7 +93,19 @@ Promise.all(promises).then((values) => {
     .attr("class", "county")
     .attr("d", (d) => path(counties.features.find((x) => x.id == d.fips)))
     .attr("fill", (d) => colorScale(d.bachelorsOrHigher))
-    .attr("stroke", "white")
+    // .attr("stroke", "white")
     .attr("data-fips", (d) => d.fips)
-    .attr("data-education", (d) => d.bachelorsOrHigher);
+    .attr("data-education", (d) => d.bachelorsOrHigher)
+    .on("mouseover", d => {
+      tooltip.transition().duration(100).style("opacity", 0.9);
+      tooltip
+        .html(`${d.area_name}, ${d.state}: ${d.bachelorsOrHigher}%`)
+        .style("left", d3.event.pageX + 10 + "px")
+        .style("top", d3.event.pageY + 10 + "px")
+      tooltip
+        .attr("data-education", d.bachelorsOrHigher)
+    })
+    .on("mouseout", d => {
+      tooltip.transition().duration(100).style("opacity", 0);
+    });
 });
