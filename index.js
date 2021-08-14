@@ -68,6 +68,7 @@ legend
 // tool tip div (hidden by default)
 const tooltip = d3.select(".canvas").append("div").attr("id", "tooltip").style("opacity", 0);
 
+// retrieve data
 const promises = [
   d3.json("https://cdn.freecodecamp.org/testable-projects-fcc/data/choropleth_map/counties.json"),
   d3.json("https://cdn.freecodecamp.org/testable-projects-fcc/data/choropleth_map/for_user_education.json"),
@@ -83,7 +84,7 @@ Promise.all(promises).then((values) => {
 
   // draw counties
   graph
-    .selectAll("path")
+    .selectAll("path.county")
     .data(educationData)
     .enter()
     .append("path")
